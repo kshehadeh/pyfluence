@@ -33,24 +33,9 @@ content_ob = confluence.create_content(
 
 # Then you can update the page
 self.confluence.update_content(
+    space_key=space_ob['key'],
     id=content_ob['id'],
     html_markup="<h1>This is an update</h1>",
     update_type=co.UPDATE_REPLACE
 )
 ```
-
-## Development
-
-### Contributing
-
-Long-term discussion and bug reports are maintained via GitHub Issues.
-Code review is done via GitHub Pull Requests.
-
-For more information read [CONTRIBUTING.md].
-
-[CONTRIBUTING.md]: /CONTRIBUTING.md
-
-### Maintainership
-
-We're actively seeking maintainers that will triage issues and pull requests and cut releases.
-If you work on a project that leverages PyGitHub and have a vested interest in keeping the code alive and well, send an email to someone in the MAINTAINERS file.
