@@ -431,26 +431,3 @@ class Confluence(object):
         """
         return self._paginated_query(path="content/{id}/child".format(id=id), expand=("attachment",),
                                      child_node="attachment")
-
-
-# if __name__ == "__main__":
-#     c = Confluence("admin", "admin", "http://localhost:1990/confluence/")
-
-    #c.create_content(space_key="TEST", type="page", title="Test Page 1", html_markup="<h1>This is a test page</h1>")
-    # c.delete_content(id=786435)
-    # c.delete_space("TEST")
-
-    #c.create_space(key="TEST",name="Test Space",description="Test space description")
-
-    # page = c.get_content(135660447)
-    # print json.dumps(page, sort_keys=True,indent=4, separators=(',', ': '))
-
-    # results = c.search("creator=kshehadeh")
-    # print json.dumps(results, sort_keys=True,indent=4, separators=(',', ': '))
-
-    # c.update_page(135660447,html_markup="<h1>Updated</h1>",update_type=UPDATE_PREPEND)
-
-    # attachment = c.get_attachments(135660447)
-    # print json.dumps(attachment, sort_keys=True,indent=4, separators=(',', ': '))
-
-    # c.add_content_attachment('/Users/karim/Downloads/test.png', 135660447)

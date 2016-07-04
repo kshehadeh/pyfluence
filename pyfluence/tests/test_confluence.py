@@ -49,6 +49,9 @@ class TestConfluence(TestCase):
             wiki_markup="h1. This is a child page"
         )
 
+        # delete content
+        self.confluence.delete_content(id=content_ob['id'])
+
     def test_search(self):
 
         self.confluence.create_content(
@@ -58,7 +61,8 @@ class TestConfluence(TestCase):
             html_markup="<h1>This is a test for search that will look for squirrels</h1>",
         )
 
-        time.sleep(1)
+        # some period of time is required for the search to return recently created content.  Not ideal.
+        time.sleep(5)
 
         # search for new content created
         search_results = self.confluence.search("title ~ \"squirrels\"")
@@ -66,7 +70,28 @@ class TestConfluence(TestCase):
 
     def test_attachments(self):
         # add attachment
-        pass
+        content_ob = self.confluence.create_content(
+            space_key=TEST_SPACE,
+            type="page",
+            title="Test Attachments",
+            html_markup="<h1>This is a test of attachments</h1>",
+        )
+
+        # initial creation
+        attach_ob = self.confluence.add_content_attachment("./data/asterix.png",content_ob['id'])
+        self.assertEqual(attach_ob['size'],1)
+
+        # get a single attachment
+        attach_ob_get = self.confluence.get_attachment(attach_ob['results'][0]['id'])
+        self.assertEqual(attach_ob['results'][0]['id'],attach_ob_get['id'])
+
+        # try updating it now
+        updated_ob = self.confluence.add_content_attachment("./data/asterix.png",content_ob['id'])
+        self.assertEqual(updated_ob['id'],attach_ob['results'][0]['id'])
+
+        # now get all attachments (there should still only be one)
+        attach_ob_get_all = self.confluence.get_attachments(content_ob['id'])
+        self.assertEqual(attach_ob_get_all['size'],1)
 
 if __name__ == '__main__':
     unittest.main()
