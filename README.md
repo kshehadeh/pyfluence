@@ -39,3 +39,20 @@ self.confluence.update_content(
     update_type=co.UPDATE_REPLACE
 )
 ```
+
+## Developing
+You can use the Atlassian Developer SDK to run tests.  You can follow the instructions here:  
+https://developer.atlassian.com/server/framework/atlassian-sdk/downloads/
+
+On the mac, for example:
+
+    > brew tap atlassian/tap
+    > brew install atlassian/atlas-tap/atlassian-plugin-sdk # or upgrade
+    > atlas-run-standalone --product confluence
+    > python -m unittest pyfluence/tests/test_confluence.py
+    
+View confluence here:
+
+    http://localhost:1990/confluence
+    
+   
