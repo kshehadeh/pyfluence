@@ -312,6 +312,17 @@ class Confluence(object):
 
         return self._query("space/", data=param_dict, method=METHOD_POST)
 
+    def get_space(self, key: str = None):
+        """
+        Retrieves information about a space
+        :param key: The unique key name (must be 10 characters or less)
+        :return: Returns the space along with its ID
+        """
+        if not key:
+            raise ConfluenceInvalidInputError("You must provide a space key to retrieve a space")
+
+        return self._query("space/%s" % str(key), expand=("description.plain", "homepage"))
+
     def create_content(self, space_key: str = None, content_type: str = "page", title: str = None,
                        html_markup: str = None, wiki_markup: str = None, parent_content_id: str = None):
         """
