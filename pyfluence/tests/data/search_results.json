@@ -1,0 +1,47 @@
+{
+  "size": 1,
+  "results": [
+    {
+      "content": {
+        "id": "225611549",
+        "type": "page",
+        "status": "current",
+        "title": "Documentation",
+        "childTypes": {},
+        "macroRenderedOutput": {},
+        "restrictions": {},
+        "_expandable": {
+          "container": "",
+          "metadata": "",
+          "extensions": "",
+          "operations": "",
+          "children": "",
+          "history": "/rest/api/content/225611549/history",
+          "ancestors": "",
+          "body": "",
+          "version": "",
+          "descendants": "",
+          "space": "/rest/api/space/ENG"
+        },
+        "_links": {
+          "webui": "/spaces/ENG/pages/225611549/Documentation",
+          "self": "https://underarmour.atlassian.net/wiki/rest/api/content/225611549",
+          "tinyui": "/x/HY9yDQ"
+        }
+      },
+      "title": "Documentation",
+      "excerpt": "Maintainer\n\n\n\nkshehadeh\n\n\n\n\n\nValidated On\n\n\n\n\u00a0\n\n\n\n\n\n\n\n\n\n\n\n\nCheat Sheet\n\n\n\n\n\n\nE-Commerce Domain\n\nE-Commerce Domains\n\n\nContent Management\n\nContent Management\n\nProduct Information Management\n\nProduct Information Management\n\nArchitecture\n\nOverall Architecture\n\nData\n\nData\n\n\nNetwork\n\nNetworking\n\nPersonalization\n\nAdobe Target",
+      "url": "/spaces/ENG/pages/225611549/Documentation",
+      "resultGlobalContainer": {
+        "title": "Engineering",
+        "displayUrl": "/spaces/ENG"
+      },
+      "breadcrumbs": [],
+      "entityType": "content",
+      "iconCssClass": "aui-iconfont-page-default",
+      "lastModified": "2018-06-28T15:16:58.295Z",
+      "friendlyLastModified": "Jun 28, 2018",
+      "score": 1.3527637
+    }
+  ]
+}

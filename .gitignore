@@ -3,3 +3,4 @@ pyfluence.egg-info
 *.pyc
 pyfluence/tests/data/config.json
 venv
+.pyfluence

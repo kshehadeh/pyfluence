@@ -75,7 +75,8 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'munch',
-        'requests'
+        'requests',
+        'cement'
     ],
 
     # List additional groups of dependencies here (e.g. development

@@ -1,0 +1,226 @@
+[MASTER]
+
+# empirically chosen parallelism
+jobs=4
+
+
+[REPORTS]
+
+reports=no
+
+score=no
+
+
+[MESSAGES CONTROL]
+
+disable=bad-continuation, fixme, len-as-condition, inherit-non-class, invalid-name, missing-docstring, no-else-return, no-method-argument, no-self-argument, no-self-use, protected-access, too-many-function-args, trailing-whitespace, unnecessary-lambda, unused-argument,relative-beyond-top-level
+# Rationales:
+#   bad-continuation: Aligned indentation is bad for maintenance and version control
+#   fixme: "Yes, yes, I know! That's why I put it there!"
+#   inherit-non-class: false positives on interface declarations
+#   invalid-name: TODO turn this one back on
+#   len-as-condition: I prefer the extra type-checking and documentation resulting from using len
+#   missing-docstring: not everything needs documentation. TODO try setting the limit high
+#   no-else-return: it rejects "if x return y else return z" which is silly
+#   no-method-argument: false positives on interface declarations
+#   no-self-argument: false positives on interface declarations
+#   no-self-use: Doesn't understand that polymorphism means methods
+#   protected-access: because I am using it for 'friend' access, maybe fix that
+#   too-many-function-args: false positives on interface usage (note that this is not "more args than style limit" this is "more args at call than parameters at declaration")
+#   trailing-whitespace: indenting blank lines is more sensible than the opposite, and trailing whitespace is mostly not worth the trouble to keep neat anyway
+#   unnecessary-lambda: false positives (complains about passing functions that happens to be constant)
+#   unused-argument: apparently cannot be prevented when an implementation legitimately does not use an arg
+
+
+[BASIC]
+
+# List of builtins function names that should not be used, separated by a comma
+bad-functions=apply,chr,globals,help,input,locals,ord,range,raw_input,__import__
+
+# Regular expression which should only match correct module names
+module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+# Regular expression which should only match correct module level names
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# Regular expression which should only match correct class names
+class-rgx=[A-Z_][a-zA-Z0-9]+$
+
+# Regular expression which should only match correct function names
+function-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Regular expression which should only match correct method names
+method-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Regular expression which should only match correct instance attribute names
+attr-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Regular expression which should only match correct argument names
+argument-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# Regular expression which should only match correct variable names
+variable-rgx=[a-z_][a-z0-9_]{0,30}$
+
+# Regular expression which should only match correct attribute names in class
+# bodies
+class-attribute-rgx=([A-Za-z_][A-Za-z0-9_]{2,30}|(__.*__))$
+
+# Regular expression which should only match correct list comprehension /
+# generator expression variable names
+inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
+
+# Good variable names which should always be accepted, separated by a comma
+good-names=i,j,k,ex,Run,_
+
+# Bad variable names which should always be refused, separated by a comma
+bad-names=
+
+# Regular expression which should only match function or class names that do
+# not require a docstring.
+no-docstring-rgx=__.*__
+
+# Minimum line length for functions/classes that require docstrings, shorter
+# ones are exempt.
+docstring-min-length=-1
+# TODO: consider turning this on
+
+
+[FORMAT]
+
+# Maximum number of characters on a single line.
+max-line-length=100000
+
+# Regexp for a line that is allowed to be longer than the limit.
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+
+# Allow the body of an if to be on the same line as the test if there is no
+# else.
+single-line-if-stmt=yes
+
+# List of optional constructs for which whitespace checking is disabled
+no-space-check=trailing-comma,dict-separator
+
+# Maximum number of lines in a module
+max-module-lines=2000
+
+# String used as indentation unit. This is usually "    " (4 spaces) or "\t" (1
+# tab).
+indent-string='    '
+
+
+[MISCELLANEOUS]
+
+# List of note tags to take in consideration, separated by a comma.
+notes=FIXME,XXX,TODO
+
+
+[SIMILARITIES]
+
+# Minimum lines number of a similarity.
+min-similarity-lines=10
+
+# Ignore comments when computing similarities.
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities.
+ignore-imports=no
+
+
+[TYPECHECK]
+
+# Tells whether missing members accessed in mixin class should be ignored. A
+# mixin class is detected if its name ends with "mixin" (case insensitive).
+ignore-mixin-members=yes
+
+# List of classes names for which member attributes should not be checked
+# (useful for classes with attributes dynamically set).
+ignored-classes=
+
+# List of members which are set dynamically and missed by pylint inference
+# system, and so shouldn't trigger E0201 when accessed. Python regular
+# expressions are accepted.
+generated-members=providedBy,run,callLater
+# have set this to fix specific complaints about zope.interface and twisted.internet.reactor
+
+
+[VARIABLES]
+
+# Tells whether we should check for unused import in __init__ files.
+init-import=yes
+
+# A regular expression matching the beginning of the name of dummy variables
+# (i.e. not used).
+dummy-variables-rgx=_
+
+# List of additional names supposed to be defined in builtins. Remember that
+# you should avoid to define new builtins when possible.
+additional-builtins=
+
+
+[CLASSES]
+
+# List of method names used to declare (i.e. assign) instance attributes.
+defining-attr-methods=__init__,__new__,setUp
+
+# List of valid names for the first argument in a class method.
+valid-classmethod-first-arg=cls
+
+# List of valid names for the first argument in a metaclass class method.
+valid-metaclass-classmethod-first-arg=mcs
+
+
+[DESIGN]
+
+# Maximum number of arguments for function / method
+max-args=20
+
+# Argument names that match this expression will be ignored. Default to name
+# with leading underscore
+ignored-argument-names=_.*
+
+# Maximum number of locals for function / method body
+max-locals=100
+# increased due to use in parsers
+# TODO think about reducing this
+
+# Maximum number of return / yield for function / method body
+max-returns=50
+# increased due to use in parsers
+
+# Maximum number of branch for function / method body
+max-branches=50
+# increased due to use in parsers
+
+# Maximum number of statements in function / method body
+max-statements=100
+
+# Maximum number of parents for a class (see R0901).
+max-parents=10
+# increased due to gnuradio having a deep ancestry we inherit in hier blocks
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes=40
+# increased because we do complex things with many knobs in single hier blocks
+
+# Minimum number of public methods for a class (see R0903).
+min-public-methods=0
+
+# Maximum number of public methods for a class (see R0904).
+max-public-methods=80
+# increased due to gnuradio and unittest interface introducing lots of not-really-public methods
+
+
+[IMPORTS]
+
+# Deprecated modules which should not be used, separated by a comma
+deprecated-modules=regsub,TERMIOS,Bastion,rexec
+
+
+[EXCEPTIONS]
+
+# Exceptions that will emit a warning when being caught. Defaults to
+# "Exception"
+overgeneral-exceptions=Exception

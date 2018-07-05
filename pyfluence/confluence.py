@@ -108,10 +108,9 @@ class Confluence(object):
         # string leading slash
         url = generate_full_url(path, self.host, api=api_root)
 
-        print(url)
-
         data = data or {}
-        data['expand'] = ",".join(expand)
+        if expand:
+            data['expand'] = ",".join(expand)
 
         # use form encoding for params if a file is given, otherwise assume that we can
         #   put JSON in the body.
@@ -241,7 +240,8 @@ class Confluence(object):
         """
         assert (isinstance(headers, (list, tuple)))
 
-        result = self._query('/1.0/detailssummary/lines', data={"cql": "id=%s" % str(id), "spaceKey": space, "headers": ",".join(headers)},
+        result = self._query('/1.0/detailssummary/lines',
+                             data={"cql": "id=%s" % str(id), "spaceKey": space, "headers": ",".join(headers)},
                              api_root="rest/masterdetail/")
 
         if not result:
@@ -475,8 +475,31 @@ class Confluence(object):
         return self._paginated_query(path="content/{id}/child".format(id=id), expand=("attachment",),
                                      child_node="attachment")
 
+    def add_labels(self, id, labels, prefix="GLOBAL"):
+        """
+        Adds label to the given content object
+        :param labels: A list of labels
+        :param prefix: Prefix can be any one of the enums found here:
+                    https://docs.atlassian.com/atlassian-confluence/5.8.9/com/atlassian/confluence/labels/Namespace.html
+        :return: Returns the JSON returned from the query
+        """
+        labels_as_data = [{"name": l, "prefix": prefix} for l in labels]
+        return self._query(path="content/{id}/label".format(id=id),
+                           method=METHOD_POST,
+                           data=labels_as_data)
+
+    def remove_labels(self, id, labels):
+        """
+        Removes given labels from the given page.  Throws ConfluenceResponseError if there is a problem
+        :param labels: A list of labels.
+        :return:
+        """
+        responses = []
+        for l in labels:
+            self._query(path="content/{id}/label?name={label}".format(id=id, label=l), method=METHOD_DELETE)
+
     def get_user_by_key(self, key):
-        return self._query(path="user",data={key: key})
+        return self._query(path="user", data={key: key})
 
     @staticmethod
     def build_page_properties_macro(props):
@@ -487,10 +510,9 @@ class Confluence(object):
             '<tbody>'
         ]
 
-        for k,v in props.iteritems():
+        for k, v in props.iteritems():
             bld.append("<tr><td>{k}</td><td>{v}</td></tr>".format(k=k, v=v))
 
         bld.append("</tbody></table>")
         bld.append("</ac:rich-text-body></ac:structured-macro>")
         return "\n".join(bld)
-
