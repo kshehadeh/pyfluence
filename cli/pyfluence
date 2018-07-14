@@ -1,3 +1,5 @@
+#! python
+
 """Main module for starting the execution of the CLI
 """
 import json
@@ -12,7 +14,7 @@ root = os.path.dirname(cli_root)
 sys.path.append(root)
 sys.path.append(cli_root)
 
-from controllers import PyfluenceBaseController, SearchController, LabelController
+from controllers import PyfluenceBaseController, SearchController, LabelController, ContentController
 from pyfluence import Confluence
 
 
@@ -29,7 +31,8 @@ class PyfluenceApp(CementApp):
         base_controller = PyfluenceBaseController
         handlers = [            
             SearchController,
-            LabelController
+            LabelController,
+            ContentController
         ]
 
     def __init__(self, *args, **kwargs):
@@ -86,7 +89,8 @@ class PyfluenceApp(CementApp):
     def get_stdin_as_object(self):
         val = self.get_stdin_as_string()
         try:
-            return munchify(json.loads(val))
+            if val:
+                return munchify(json.loads(val))
         except json.JSONDecodeError as e:
             print("Invalid JSON encountered on stdin: {msg}".format(msg=e.msg))
             self.close(1)
@@ -95,6 +99,29 @@ class PyfluenceApp(CementApp):
         print("Pyfluence CLI")
         print("Connecting to {server} as {user}".format(server=self.conf_server,user=self.conf_username))
         print("--------------")
+
+    def get_content_ids(self):
+        """
+        Pulls content IDs either from the content_id argument or looks in stdin to see if there is JSON
+        formatted as search results from which content IDs can be pulled.
+        :return: Returns a list of content IDs
+        """
+        content_ids = []
+        if not self.pargs.content_id:
+            ob = self.get_stdin_as_object()
+            if ob:
+                try:
+                    for content in ob.results:
+                        content_ids.append(content.content.id)
+                except KeyError:
+                    print("stdin is valid JSON but does not appear to conform to Confluence REST API results.")
+                    self.close(1)
+            else:
+                print("You must either specify a content_id parameter or pass search results in stdin")
+        else:
+            content_ids.append(self.pargs.content_id)
+
+        return content_ids
 
     @staticmethod
     def get_stdin_as_string():
