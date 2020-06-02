@@ -1,5 +1,7 @@
 import json
 import os
+from json import JSONDecodeError
+from typing import Union, List
 
 import requests
 import time
@@ -28,7 +30,7 @@ class ConfluenceResponseError(Exception):
 
         try:
             self.json = json.loads(msg)
-        except Exception:
+        except JSONDecodeError:
             self.message = msg
 
         super(ConfluenceResponseError, self).__init__(msg)
@@ -74,19 +76,20 @@ class Confluence(object):
 
     """
 
-    def __init__(self, username, password, host):
+    def __init__(self, username: str, password: str, host: str):
         """
         Initialize with username, password and host info
         :param username: The username to login to confluence with
         :param password: The password to login to confluence with
         :param host: The host url (excluding the path to the API (e.g. http://myconfluence.company.com/wiki)
         """
-        self.username = username
-        self.password = password
-        self.host = host
+        self.username: str = username
+        self.password: str = password
+        self.host: str = host
 
-    def _query(self, path, data=None, method=METHOD_GET, expand=(), files=None,
-               headers=None, sync=True, api_root=None):
+    # noinspection PyUnresolvedReferences
+    def _query(self, path: str, data: dict = None, method: str = METHOD_GET, expand: List[str] = (),
+               files: dict = None, headers: dict = None, sync: bool = True, api_root: str = None):
         """
         Generalized Confluence REST API method.  All requests come through this method eventually.
         :param path: The path to the API (excluding the root)
@@ -99,18 +102,17 @@ class Confluence(object):
         :return: Returns the JSON representation of the result from the API.
         """
 
-        def generate_full_url(path, host, api=None):
+        def generate_full_url(url_path, host, api=None):
             api = api or "rest/api/"
-            path = path[1:] if path[0] == "/" else path
+            url_path = url_path[1:] if url_path[0] == "/" else url_path
             host = host[0:-1] if host[-1] == "/" else host
-            return "{host}/{api}{path}".format(host=host, api=api, path=path)
+            return "{host}/{api}{path}".format(host=host, api=api, path=url_path)
 
         # string leading slash
         url = generate_full_url(path, self.host, api=api_root)
 
         data = data or {}
-        if expand:
-            data['expand'] = ",".join(expand)
+        data['expand'] = ",".join(expand)
 
         # use form encoding for params if a file is given, otherwise assume that we can
         #   put JSON in the body.
@@ -142,16 +144,17 @@ class Confluence(object):
             # no content to return
             return None
 
-        if response.status_code == 202 and sync == True:
+        if response.status_code == 202 and sync is True:
             # poll until complete
             while response.status_code == 202:
-                status_url = generate_full_url(path=response.json()['links']['status'], host=self.host, api="")
+                status_url = generate_full_url(url_path=response.json()['links']['status'], host=self.host, api="")
                 response = requests.get(status_url, auth=(self.username, self.password))
                 time.sleep(1)
 
         return response.json()
 
-    def _paginated_query(self, path, data=None, limit=25, start=0, expand=(), child_node=None):
+    def _paginated_query(self, path: str, data: dict = None, limit: int = 25, start: int = 0, expand: List[str] = (),
+                         child_node=None):
         """
         For queries that return paginated data, this will retrieve all pages of the result, not just the first.
         :param path: (see _query)
@@ -197,16 +200,16 @@ class Confluence(object):
             "results": results
         }
 
-    def get_content(self, id, expand=("space", "body.view", "version", "container")):
+    def get_content(self, page_id: str, expand=("space", "body.view", "version", "container")):
         """
         Gets the content with the given ID
-        :param id: The ID of the content
+        :param page_id: The ID of the content
         :param expand: The specific parts of the content entity to return in the result.
         :return: The JSON representation of the content.
         """
         expand = expand or ()
         try:
-            result = self._query('/content/' + str(id),
+            result = self._query('/content/' + str(page_id),
                                  expand=expand,
                                  method=METHOD_GET)
             return result
@@ -216,7 +219,7 @@ class Confluence(object):
             else:
                 raise e
 
-    def search(self, cql, expand=None):
+    def search(self, cql: str, expand: Union[str, None] = None):
         """
         Executes a CQL query to retrieve information about the content.
         :param cql: The CQL query
@@ -227,13 +230,41 @@ class Confluence(object):
         expand = expand or []
         return self._paginated_query('/search', data={"cql": cql, "expand": ",".join(expand)})
 
-    def get_page_properties(self, id, space, headers):
+    def get_content_properties(self, page_id: str):
+        """
+        Retrieves the content properties (which are the hidden properties that can be set through the confluence
+        API).  These are different than the page properties which is a specially formatted table.
+        :param page_id:
+        :return:
+        """
+        result = self._paginated_query(f"/content/{page_id}/property")
+        return result['results']
+
+    def set_content_property(self, page_id: str, key: str, val: Union[dict, None]):
+        """
+        Retrieves the content properties (which are the hidden properties that can be set through the confluence
+        API).  These are different than the page properties which is a specially formatted table.
+            More Info: https://developer.atlassian.com/cloud/confluence/rest/#api-api-content-id-property-post
+
+        :param page_id:
+        :param key: The property name
+        :param val: The complex object or None
+        :return:
+        """
+        result = self._query(f"/content/{page_id}/property", data={
+            "key": key,
+            "value": val
+        }, method=METHOD_POST)
+
+        return result['id']
+
+    def get_page_properties(self, page_id: str, space: str, headers: dict):
         """
         Use this to get the page properties (not content properties) for a page.  Page properties are the
         key-value pairs that appear in a table within a _Page Properties_ macro.
             More Info: https://confluence.atlassian.com/confcloud/page-properties-macro-724765240.html
 
-        :param id: The ID of the content page
+        :param page_id: The ID of the content page
         :param space: The key of the space that the page is in.
         :param headers: An array of page property keys
         :return: Returns a dictionary with the key, value pairs requested.
@@ -241,7 +272,7 @@ class Confluence(object):
         assert (isinstance(headers, (list, tuple)))
 
         result = self._query('/1.0/detailssummary/lines',
-                             data={"cql": "id=%s" % str(id), "spaceKey": space, "headers": ",".join(headers)},
+                             data={"cql": "id=%s" % str(page_id), "spaceKey": space, "headers": ",".join(headers)},
                              api_root="rest/masterdetail/")
 
         if not result:
@@ -253,7 +284,7 @@ class Confluence(object):
 
         return None
 
-    def create_space(self, key, name, description=""):
+    def create_space(self, key: str, name: str, description: str = ""):
         """
         Creates a new space
         :param key: The unique key name (must be 10 characters or less)
@@ -281,10 +312,10 @@ class Confluence(object):
 
         return self._query("space/", data=param_dict, method=METHOD_POST)
 
-    def create_content(self, space_key=None, type="page", title=None,
-                       html_markup=None, wiki_markup=None, parent_content_id=None):
+    def create_content(self, space_key: str = None, content_type: str = "page", title: str = None,
+                       html_markup: str = None, wiki_markup: str = None, parent_content_id: str = None):
         """
-        :param type: The page type which can be "page", "blogpost", etc. (required)
+        :param content_type: The page type which can be "page", "blogpost", etc. (required)
         :param title: Then title of the page (required)
         :param space_key: The key for the confluence space to add the content to (required)
         :param parent_content_id: The ID of the content that should be the parent (if None, will be in the root of
@@ -299,8 +330,8 @@ class Confluence(object):
         if not title:
             raise ConfluenceInvalidInputError("You must provide a valid content type to add content")
 
-        if not type:
-            type = "page"
+        if not content_type:
+            content_type = "page"
 
         param_dict = {
             "title": title,
@@ -314,7 +345,7 @@ class Confluence(object):
                         "representation": "storage" if html_markup else "wiki"
                     }
                 },
-            "type": type
+            "type": content_type
         }
 
         if parent_content_id:
@@ -322,15 +353,15 @@ class Confluence(object):
 
         return self._query("content/", data=param_dict, method=METHOD_POST)
 
-    def delete_content(self, id):
+    def delete_content(self, page_id: str):
         """
         Deletes content
-        :param id: The ID of the content to delete
+        :param page_id: The ID of the content to delete
         :return: Nothing returned if successful.  ConfluenceResponseError raised if failure.
         """
-        self._query("content/%s" % str(id), method=METHOD_DELETE)
+        self._query("content/%s" % str(page_id), method=METHOD_DELETE)
 
-    def delete_space(self, key):
+    def delete_space(self, key: str):
         """
         Deletes a space
         :param key: The key of the space to delete
@@ -341,29 +372,30 @@ class Confluence(object):
         #   most likely.
         self._query("space/%s" % str(key), method=METHOD_DELETE, sync=False)
 
-    def update_content(self, id, html_markup=None, wiki_markup=None, update_type=UPDATE_REPLACE):
+    def update_content(self, page_id: str, html_markup: str = None, wiki_markup: str = None,
+                       update_type: str = UPDATE_REPLACE):
         """
         Update a page either by replacing the entire page or prepending or appending content
-        :param id:  The id of the page to update
+        :param page_id:  The page_id of the page to update
         :param html_markup: The HTML markup to update with ('storage' representation)
         :param wiki_markup: The Wiki markup to update with ('wiki' representation)
         :param update_type: Whether to replace, prepend or append (UPDATE_REPLACE, UPDATE_PREPEND, UPDATE_APPEND)
         :return:
         """
         # first get information about the page
-        page = self.get_content(id, expand=("space", "body.view", "version", "container", "ancestors"))
+        page = self.get_content(page_id, expand=("space", "body.view", "version", "container", "ancestors"))
         if not page:
-            raise ConfluenceContentNotFoundError(id, "Unable to find updateable page during page update request")
+            raise ConfluenceContentNotFoundError(page_id, "Unable to find updateable page during page update request")
 
         representation = page['body']['view']['representation']
         body = page['body']['view']['value']
 
         if representation == 'storage' and not html_markup and update_type != UPDATE_REPLACE:
-            raise ConfluenceIncompatibleRepresentationError(content_id=id, representation_expected=representation,
+            raise ConfluenceIncompatibleRepresentationError(content_id=page_id, representation_expected=representation,
                                                             representation_given="wiki")
 
         if representation == 'wiki' and not wiki_markup and update_type != UPDATE_REPLACE:
-            raise ConfluenceIncompatibleRepresentationError(content_id=id, representation_expected=representation,
+            raise ConfluenceIncompatibleRepresentationError(content_id=page_id, representation_expected=representation,
                                                             representation_given="storage")
 
         new_value = html_markup or wiki_markup
@@ -376,7 +408,7 @@ class Confluence(object):
             final_value = new_value + body
 
         param_dict = {
-            "id": str(id),
+            "id": str(page_id),
             "title": page['title'],
             "space": {
                 "key": page['space']['key']
@@ -401,116 +433,100 @@ class Confluence(object):
             del anc['extensions']
             param_dict['ancestors'] = [anc]
 
-        return self._query("content/%s" % str(id), data=param_dict, method=METHOD_PUT)
+        return self._query("content/%s" % str(page_id), data=param_dict, method=METHOD_PUT)
 
-    def get_content_info(self, id):
+    def get_content_info(self, page_id: str):
         """
         Retrieves information about the given page
-        :param auth: The username and password tuple
         :param page_id: The ID of the page to get info about
         :return: The response as JSON
         """
-        return self.get_content(id, expand=None)
+        return self.get_content(page_id, expand=None)
 
-    def get_content_ancestors(self, id):
+    def get_content_ancestors(self, page_id: str):
         """
         Get basic content information plus the ancestors property
-        :param id: The ID of the page to get info about
+        :param page_id: The ID of the page to get info about
         :return: Returns ancestor information for the given page.
         """
-        content = self.get_content(id, expand=("ancestors"))
+        content = self.get_content(page_id, expand=["ancestors"])
         return content.json()['ancestors']
 
-    def add_content_attachment(self, file, id):
+    def add_content_attachment(self, file: str, page_id: str):
         """
         Adds an attachment to the given page but will add a new version if a file with the given name
         already exists.
         :param file: The file to add
-        :param id: The ID of the content to add to
+        :param page_id: The ID of the content to add to
         :return: The result of the query.
         """
         # first, determine if there's an attachment with this name
         add_new_version = None
         filename = os.path.basename(file)
-        attachments = self.get_attachments(id)
+        attachments = self.get_attachments(page_id)
         for a in attachments['results']:
             if a['title'] == filename:
                 add_new_version = a
 
         with open(file, 'rb') as fp:
             if not add_new_version:
-                r = self._query("content/{id}/child/attachment".format(id=id),
+                r = self._query("content/{page_id}/child/attachment".format(page_id=page_id),
                                 method=METHOD_POST,
-                                files={'file': fp},
+                                files={"file": fp},
                                 data={'comment': 'new version of %s' % file, 'minorEdit': True},
                                 headers=({'X-Atlassian-Token': 'no-check'}))
 
             else:
-                url = "content/{id}/child/attachment/{attachment_id}/data".format(id=id,
-                                                                                  attachment_id=add_new_version['id'])
+                url = "content/{page_id}/child/attachment/{attachment_id}/data".format(page_id=page_id,
+                                                                                       attachment_id=add_new_version[
+                                                                                           'id'])
                 r = self._query(url,
                                 method=METHOD_POST,
-                                files={'file': fp},
+                                files={"file": fp},
                                 data={'minorEdit': True, 'comment': 'new version of %s' % file},
                                 headers=({'X-Atlassian-Token': 'no-check'}))
 
         return r
 
-    def get_attachment(self, attachment_id):
+    def get_attachment(self, attachment_id: str):
         """
         Get the attachment with the given id (attachment IDs start with "att")
-        :param auth:
-        :param page_id:
         :param attachment_id: The ID of the attachment content (
         :return:
         """
         return self.get_content(attachment_id, expand=("ancestors", "version", "space", "container"))
 
-    def get_attachments(self, id):
+    def get_children(self, page_id: str):
         """
-        Gets a list of all the attachments that are children of the given content
-        :param id:
-        :return: An object containing attachment data for the given parent content
-        """
-        return self._paginated_query(path="content/{id}/child".format(id=id), expand=("attachment",),
-                                     child_node="attachment")
-
-    def add_labels(self, id, labels, prefix="GLOBAL"):
-        """
-        Adds label to the given content object
-        :param labels: A list of labels
-        :param prefix: Prefix can be any one of the enums found here:
-                    https://docs.atlassian.com/atlassian-confluence/5.8.9/com/atlassian/confluence/labels/Namespace.html
-        :return: Returns the JSON returned from the query
-        """
-        labels_as_data = [{"name": l, "prefix": prefix} for l in labels]
-        return self._query(path="content/{id}/label".format(id=id),
-                           method=METHOD_POST,
-                           data=labels_as_data)
-
-    def remove_labels(self, id, labels):
-        """
-        Removes given labels from the given page.  Throws ConfluenceResponseError if there is a problem
-        :param labels: A list of labels.
+        Gets all direct children of the given page.
+        :param page_id:
         :return:
         """
-        responses = []
-        for l in labels:
-            self._query(path="content/{id}/label?name={label}".format(id=id, label=l), method=METHOD_DELETE)
+        return self._paginated_query(path="content/{page_id}/child".format(page_id=page_id), expand=["page"],
+                                     child_node="page")
+
+    def get_attachments(self, page_id: str):
+        """
+        Gets a list of all the attachments that are children of the given content
+        :param page_id:
+        :return: An object containing attachment data for the given parent content
+        """
+        return self._paginated_query(path="content/{page_id}/child".format(page_id=page_id), expand=["attachment"],
+                                     child_node="attachment")
 
     def get_user_by_key(self, key):
         return self._query(path="user", data={key: key})
 
     @staticmethod
-    def build_page_properties_macro(props):
+    def build_page_properties_macro(props: dict):
 
         bld = [
             "<ac:structured-macro ac:name=\"details\"><ac:rich-text-body>\n", '<table class="wrapped">',
-            '<colgroup>%s</colgroup>' % ''.join(['<col />' for i in range(len(props))]),
+            '<colgroup>%s</colgroup>' % ''.join(['<col />' for _ in range(len(props))]),
             '<tbody>'
         ]
 
-        for k, v in props.iteritems():
+        for k, v in props.items():
             bld.append("<tr><td>{k}</td><td>{v}</td></tr>".format(k=k, v=v))
 
         bld.append("</tbody></table>")

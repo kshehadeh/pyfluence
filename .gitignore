@@ -4,3 +4,5 @@ pyfluence.egg-info
 pyfluence/tests/data/config.json
 venv
 .pyfluence
+.cache
+dist/

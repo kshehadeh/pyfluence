@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 cement = "*"
+munch = "*"
+requests = "*"
 
 [dev-packages]
 
