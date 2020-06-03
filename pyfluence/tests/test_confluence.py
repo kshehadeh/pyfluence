@@ -32,7 +32,8 @@ class TestConfluence(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls._confluence.delete_space(cls._config['test_space'])
+        # cls._confluence.delete_space(cls._config['test_space'])
+        pass
 
     def test_content(self):
         # create content
@@ -55,6 +56,13 @@ class TestConfluence(TestCase):
             page_id=content_ob['id'],
             html_markup="<div>prepended</div>",
             update_type=UPDATE_PREPEND
+        )
+
+        # update content with prepend
+        self._confluence.update_title(
+            page_id=content_ob['id'],
+            title="Updated Title",
+            update_type=UPDATE_REPLACE
         )
 
         # create child page

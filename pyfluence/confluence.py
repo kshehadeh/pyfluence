@@ -372,6 +372,35 @@ class Confluence(object):
         #   most likely.
         self._query("space/%s" % str(key), method=METHOD_DELETE, sync=False)
 
+    def update_title(self, page_id: str, title: str, update_type: str = UPDATE_REPLACE):
+        page = self.get_content(page_id, expand=("space", "body.view", "version", "container", "ancestors"))
+        if not page:
+            raise ConfluenceContentNotFoundError(page_id, "Unable to find updateable page during page update request")
+
+        new_title = ""
+        current_title = page['title']
+        if update_type == UPDATE_REPLACE:
+            new_title = title
+        elif update_type == UPDATE_PREPEND:
+            if not current_title.startswith(title):
+                new_title = f"{title}{current_title}"
+        elif update_type == UPDATE_APPEND:
+            if not current_title.endswith(title):
+                new_title = f"{current_title}{title}"
+
+        if new_title and (new_title != current_title):
+            param_dict = {
+                "title": new_title,
+                "version": {
+                    "number": page['version']['number'] + 1
+                },
+                "type": page['type']
+            }
+
+            return self._query("content/%s" % str(page_id), data=param_dict, method=METHOD_PUT)
+        else:
+            return None
+
     def update_content(self, page_id: str, html_markup: str = None, wiki_markup: str = None,
                        update_type: str = UPDATE_REPLACE):
         """
